@@ -217,7 +217,10 @@ void computeThermalNoise()
 
 void computePtlPos()
 {
-  //TODO
+  for(unsigned i = 0 ; i < _nPar ; ++i){
+    for(unsigned j = 0 ; j < 2 ; ++j)
+      _r[i][j] += _dt*(_f[i][j]/_gt+_vr[i][j]);
+  }
 }
 
 //Different types of interactions
