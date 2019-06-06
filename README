@@ -1,0 +1,11 @@
+On a linux platform with g++ complier installed, please type in the terminal the following command:
+
+g++ -O3 -o LJ LJ.cpp
+
+to compile the code.
+
+To execute the program, just simply type
+
+./LJ .
+
+then the simulation will finish within a couple of minutes for particle number = 512 and nStep = 100000
