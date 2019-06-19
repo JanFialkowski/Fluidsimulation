@@ -39,6 +39,10 @@ void initialize(string & path)
 
   //Generate an initial configuration
   initializeConfig();
+
+  //Initialize the neighbor list
+  if(_ifUseNbrListAlgorithm)
+    updateNbr();
 }
 
 void initVariables(string & path)
@@ -134,8 +138,10 @@ void initVariables(string & path)
   _Dt = _kBT/_gt;
 
   _nList.assign( _nPar - 1, vector<unsigned>(1, 0));
-  for(unsigned i = 0 ; i < _nPar - 1 ; ++i) //upper triangle
-    _nList[i].assign(_nPar - i, 0);
+  for(unsigned i = 0 ; i < _nPar - 1 ; ++i){ //upper triangle
+    _nList[i].assign(_nPar - i, UINT_MAX);
+    _nList[i][0] = 0;
+  }
   
   _rOld.assign(_nPar, vector<double>(2, 0.));
 
@@ -217,9 +223,11 @@ void computeThermalNoise()
 
 void computePtlPos()
 {
+
   for(unsigned i = 0 ; i < _nPar ; ++i){
-    for(unsigned j = 0 ; j < 2 ; ++j)
-      _r[i][j] += _dt*(_f[i][j]/_gt+_vr[i][j]);
+    for(unsigned j = 0 ; j < 2 ; ++j){
+      _r[i][j] += 1./_gt * _f[i][j] * _dt + _vr[i][j] * _dt;
+    }
   }
 }
 
@@ -273,7 +281,7 @@ vector<double>  calcForceLennard_Jones(vector<double> imgD,
 
 void Weeks_Chandler_Andersen(unsigned i, unsigned j)
 {
-  //TODO for purely repulsive systems 
+  //TODO
 }
 
 //Output info
@@ -363,6 +371,7 @@ double calcEnergyPerPtl()
 
 void outputConfig(unsigned long int step, string path)
 {
+  //TODO
   ofstream oFile;
  
   string fileName = path + "config.xyz";

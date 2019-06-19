@@ -44,7 +44,7 @@ Simulation::Simulation() : _boxSize(2, 0.),
 }
 
 void Simulation::initialize(string & path)
-{ 
+{
 
   cout << "==== Initializing the Simulation ====" << endl;
 
@@ -63,7 +63,7 @@ void Simulation::initVariables(string & path)
 {
   ifstream iFile;
   string key, key2;
- 
+
   if(path.back() != '/')
     path = path + '/';
 
@@ -87,11 +87,11 @@ void Simulation::initVariables(string & path)
       else if(key == "ifUseNbrList"){
         iFile >> key2;
         if(key2 == "yes"){
-          _ifUseNbrListAlgorithm = true; 
+          _ifUseNbrListAlgorithm = true;
           cout << "Neighbor List Algorithm is employed." << endl;
         }
         else if(key2 == "no"){
-          _ifUseNbrListAlgorithm = false; 
+          _ifUseNbrListAlgorithm = false;
           cout << "Simulation is performed without introducing Nbr List." << endl;
         }
         else{
@@ -134,7 +134,7 @@ void Simulation::initVariables(string & path)
       }
     }
   }
-    
+
   iFile.close();
 
   //Allocate sizes and assign values to variables
@@ -148,7 +148,7 @@ void Simulation::initVariables(string & path)
   _u.assign(_nPar, 0.);
 
   _kBT = 1.;   //energy unit
-  _eps = 100.0*_kBT; 
+  _eps = 100.0*_kBT;
   _sigma = 1.; //length unit
   _rc = pow(2.0,1.0/6.0)*_sigma;
 
@@ -164,7 +164,7 @@ void Simulation::initVariables(string & path)
       _nList[i][0] = 0;
     }
   }
-  
+
   _rOld.assign(_nPar, vector<double>(2, 0.));
 
   _rL = 2.5*_sigma;
@@ -245,7 +245,7 @@ void Simulation::computeThermalNoise()
 
   for(unsigned i = 0 ; i < _nPar ; ++i){
     for(unsigned j = 0 ; j < 2 ; ++j){
-      _vr[i][j] = preFactor_t * _normal_dist(_rng); 
+      _vr[i][j] = preFactor_t * _normal_dist(_rng);
     }
     _wr[i] = preFactor_r * _normal_dist(_rng);
   }
@@ -256,8 +256,8 @@ void Simulation::computePtlPosAndOrnt()
   for(unsigned i = 0 ; i < _nPar ; ++i){
     for(unsigned j = 0 ; j < 2 ; ++j){
       _r[i][j] += 1./_gt * _f[i][j] * _dt + _vr[i][j] * _dt + _dt*_v0*_e[i][j];
-    } 
-	_phi[i] += _wr[i];
+    }
+	_phi[i] += _wr[i]*_dt;
   _e[i][0] = cos(_phi[i]);
   _e[i][1] = sin(_phi[i]);
 	}
@@ -269,7 +269,7 @@ void Simulation::Lennard_Jones(unsigned i, unsigned j)
   vector<double> imgD = calcImgDisplacement(i,j);
 
   double r2  = SQ(imgD[0]) + SQ(imgD[1]);
-  
+
   if(r2 > _rc*_rc){
     return;
   }
@@ -277,7 +277,7 @@ void Simulation::Lennard_Jones(unsigned i, unsigned j)
     double sigma_3 = _sigma*_sigma*_sigma;
     double sigma_dev_r_6  = sigma_3*sigma_3/(r2*r2*r2);
     double sigma_dev_r_12 = sigma_dev_r_6*sigma_dev_r_6;
-    
+
     double Uij =  4*_eps*(sigma_dev_r_12 - sigma_dev_r_6);
     vector<double> fij = calcForceLennard_Jones(imgD, r2, sigma_dev_r_6, sigma_dev_r_12);
 
@@ -288,10 +288,10 @@ void Simulation::Lennard_Jones(unsigned i, unsigned j)
       cout << "rj = {" << _r[j][0] << ", " << _r[j][1] << "}" << endl;
       cout << "Img(rij) = {" << imgD[0] << ", " << imgD[1] << "}" << endl;
     }
-    
+
     _u[i] += 0.5*Uij;
     _u[j] += 0.5*Uij;
-    
+
     for(unsigned k = 0 ; k < 2 ; ++k){
       _f[i][k] -= fij[k]; //Newton's third law: fji = -fij
       _f[j][k] += fij[k];
@@ -300,8 +300,8 @@ void Simulation::Lennard_Jones(unsigned i, unsigned j)
 
 }
 
-vector<double>  Simulation::calcForceLennard_Jones(vector<double> imgD, 
-                                                   double r2, 
+vector<double>  Simulation::calcForceLennard_Jones(vector<double> imgD,
+                                                   double r2,
                                                    double sigma_dev_r_6,
                                                    double sigma_dev_r_12)
 {
@@ -319,7 +319,7 @@ void Simulation::Weeks_Chandler_Andersen(unsigned i, unsigned j)
   vector<double> imgD = calcImgDisplacement(i,j);
 
   double r2  = SQ(imgD[0]) + SQ(imgD[1]);
-  
+
   if(r2 > _rc*_rc){
     return;
   }
@@ -327,7 +327,7 @@ void Simulation::Weeks_Chandler_Andersen(unsigned i, unsigned j)
     double sigma_3 = _sigma*_sigma*_sigma;
     double sigma_dev_r_6  = sigma_3*sigma_3/(r2*r2*r2);
     double sigma_dev_r_12 = sigma_dev_r_6*sigma_dev_r_6;
-    
+
     double Uij =  4*_eps*(sigma_dev_r_12 - sigma_dev_r_6)+_eps;
     vector<double> fij = calcForceLennard_Jones(imgD, r2, sigma_dev_r_6, sigma_dev_r_12);
 
@@ -338,10 +338,10 @@ void Simulation::Weeks_Chandler_Andersen(unsigned i, unsigned j)
       cout << "rj = {" << _r[j][0] << ", " << _r[j][1] << "}" << endl;
       cout << "Img(rij) = {" << imgD[0] << ", " << imgD[1] << "}" << endl;
     }
-    
+
     _u[i] += 0.5*Uij;
     _u[j] += 0.5*Uij;
-    
+
     for(unsigned k = 0 ; k < 2 ; ++k){
       _f[i][k] -= fij[k]; //Newton's third law: fji = -fij
       _f[j][k] += fij[k];
@@ -350,20 +350,20 @@ void Simulation::Weeks_Chandler_Andersen(unsigned i, unsigned j)
 
 }
 
-vector<double>  Simulation::calcForceWCA(vector<double> imgD, 
-                                         double r2, 
-                                         double sigma_dev_r_6,
-                                         double sigma_dev_r_12)
-{
+//vector<double>  Simulation::calcForceWCA(vector<double> imgD,
+ //                                        double r2,
+ //                                        double sigma_dev_r_6,
+ //                                        double sigma_dev_r_12)
+//{
   //TODO
-}
+//}
 
 //Output info
 void Simulation::output(unsigned long int step, string path)
 {
   double E;
   ofstream oFile;
- 
+
   E = calcEnergyPerPtl();
 
   string fileName = path + "properties.dat";
@@ -374,7 +374,7 @@ void Simulation::output(unsigned long int step, string path)
   }
   else
     oFile.open(fileName.c_str(), ios::app);
-    
+
   oFile << step << " " << E << endl;
 
   oFile.close();
@@ -397,7 +397,7 @@ double Simulation::calcEnergyPerPtl()
 void Simulation::outputConfig(unsigned long int step, string path)
 {
   ofstream oFile;
- 
+
   string fileName = path + "config.xyz";
 
   if(step == 0){
@@ -405,7 +405,7 @@ void Simulation::outputConfig(unsigned long int step, string path)
   }
   else
     oFile.open(fileName.c_str(), ios::app);
-    
+
   oFile << _nPar << endl;
   oFile << "Lattice=";
   oFile << "\"";
@@ -417,8 +417,8 @@ void Simulation::outputConfig(unsigned long int step, string path)
   oFile << "Time=" << step*_dt << endl;
 
   for(unsigned i = 0 ; i < _nPar ; ++i){
-    oFile << "M "; 
-    oFile << _r[i][0] << " " << _r[i][1] << " "; 
+    oFile << "M ";
+    oFile << _r[i][0] << " " << _r[i][1] << " ";
     oFile << _e[i][0] << " " << _e[i][1] << endl;
   }
 
@@ -455,10 +455,10 @@ void Simulation::updateNbr()
 bool Simulation::checkIfUpdateNbr()
 {
   double ld2;        //the largest squared displcement
-  double secondld2;  //the 2nd largest squared displacement 
+  double secondld2;  //the 2nd largest squared displacement
   double temp;
-  double distance;   //how much it is possible 
-                     //for two particle to get closer to each other 
+  double distance;   //how much it is possible
+                     //for two particle to get closer to each other
   double dShell;     //shell thinkness
   secondld2 = 0.;
   dShell = _rL - _rc;
